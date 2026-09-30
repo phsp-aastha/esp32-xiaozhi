@@ -122,6 +122,7 @@ public:
     void EncodeWakeWord();
     std::unique_ptr<AudioStreamPacket> PopWakeWordPacket();
     const std::string& GetLastWakeWord() const;
+    const std::string& GetLastWakeWordAction() const;
     bool IsVoiceDetected() const { return voice_detected_; }
     bool IsIdle();
     bool IsPlaybackIdle();
@@ -223,3 +224,5 @@ private:
 };
 
 #endif
+
+

@@ -35,6 +35,7 @@ public:
     void EncodeWakeWordData();
     bool GetWakeWordOpus(std::vector<uint8_t>& opus);
     const std::string& GetLastDetectedWakeWord() const { return last_detected_wake_word_; }
+    const std::string& GetLastDetectedAction() const { return last_detected_action_; }
 
 private:
     struct Command {
@@ -57,6 +58,7 @@ private:
     std::function<void(const std::string& wake_word)> wake_word_detected_callback_;
     AudioCodec* codec_ = nullptr;
     std::string last_detected_wake_word_;
+    std::string last_detected_action_;
     std::atomic<bool> running_ = false;
     std::vector<int16_t> input_buffer_;
     std::mutex input_buffer_mutex_;
@@ -74,3 +76,5 @@ private:
 };
 
 #endif
+
+

@@ -243,15 +243,43 @@ int NoAudioCodec::Read(int16_t* dest, int samples) {
     constexpr uint32_t kReadTimeoutMs = 200;
 
     std::vector<int32_t> bit32_buffer(samples);
-    if (i2s_channel_read(rx_handle_, bit32_buffer.data(), samples * sizeof(int32_t), &bytes_read, kReadTimeoutMs) != ESP_OK) {
+
+    if (i2s_channel_read(
+            rx_handle_,
+            bit32_buffer.data(),
+            samples * sizeof(int32_t),
+            &bytes_read,
+            kReadTimeoutMs) != ESP_OK) {
         return 0;
     }
 
     samples = bytes_read / sizeof(int32_t);
+
+    int32_t max_value = 0;
+    int32_t raw_max = 0;
+
     for (int i = 0; i < samples; i++) {
-        int32_t value = bit32_buffer[i] >> 12;
-        dest[i] = (value > INT16_MAX) ? INT16_MAX : (value < -INT16_MAX) ? -INT16_MAX : (int16_t)value;
+        int32_t v = bit32_buffer[i];
+        if (v > raw_max) raw_max = v;
+        if (-v > raw_max) raw_max = -v;
+
+        // 24-bit left-aligned in 32-bit -> 16-bit. Use >>15 for 2x gain
+        // or >>14 for 4x if your mic is too quiet.
+        int32_t value = v >> 16;
+        if (value > INT16_MAX) value = INT16_MAX;
+        if (value < -INT16_MAX) value = -INT16_MAX;
+        dest[i] = (int16_t)value;
+
+        int32_t a = value < 0 ? -value : value;
+        if (a > max_value) max_value = a;
     }
+
+    static int log_counter = 0;
+
+    if (++log_counter >= 100) {
+        log_counter = 0;
+    }
+
     return samples;
 }
 

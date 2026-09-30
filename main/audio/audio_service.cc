@@ -650,6 +650,11 @@ const std::string& AudioService::GetLastWakeWord() const {
     return audio_engine_ ? audio_engine_->GetLastDetectedWakeWord() : empty;
 }
 
+const std::string& AudioService::GetLastWakeWordAction() const {
+    static const std::string empty;
+    return audio_engine_ ? audio_engine_->GetLastDetectedAction() : empty;
+}
+
 std::unique_ptr<AudioStreamPacket> AudioService::PopWakeWordPacket() {
     auto packet = std::make_unique<AudioStreamPacket>();
     if (audio_engine_ && audio_engine_->GetWakeWordOpus(packet->payload)) {
@@ -879,3 +884,5 @@ bool AudioService::InitializeAudioEngine() {
     audio_engine_->EnableDeviceAec(device_aec_enabled_);
     return true;
 }
+
+

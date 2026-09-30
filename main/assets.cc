@@ -279,6 +279,10 @@ bool Assets::LvglStrategy::Apply(Assets* assets, bool refresh_display_theme) {
     }
 
     Assets::LoadSrmodelsFromIndex(assets, root.get());
+    if (!Board::GetInstance().GetDisplay()->SupportsGuiOperations()) {
+        ESP_LOGI(TAG, "Display does not support GUI operations; skipping LVGL assets");
+        return true;
+    }
 
     auto& theme_manager = LvglThemeManager::GetInstance();
     auto light_theme = theme_manager.GetTheme("light");

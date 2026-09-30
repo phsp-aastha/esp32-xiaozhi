@@ -45,6 +45,7 @@ public:
     void EncodeWakeWordData() override;
     bool GetWakeWordOpus(std::vector<uint8_t>& opus) override;
     const std::string& GetLastDetectedWakeWord() const override { return last_detected_wake_word_; }
+    const std::string& GetLastDetectedAction() const override { return last_detected_action_; }
 
 private:
     enum class WakeDetector {
@@ -84,6 +85,7 @@ private:
     std::unique_ptr<CustomWakeWord> custom_wake_word_;
     std::vector<std::string> wake_words_;
     std::string last_detected_wake_word_;
+    std::string last_detected_action_;
     std::vector<int16_t> input_buffer_;
     std::vector<int16_t> output_buffer_;
     std::mutex input_buffer_mutex_;
@@ -111,3 +113,5 @@ private:
 };
 
 #endif
+
+

@@ -90,14 +90,15 @@ bool CustomWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) 
         language_ = "cn";
         models_ = esp_srmodel_init("model");
         owns_models_ = models_ != nullptr;
-#ifdef CONFIG_CUSTOM_WAKE_WORD
-        threshold_ = CONFIG_CUSTOM_WAKE_WORD_THRESHOLD / 100.0f;
-        commands_.push_back({CONFIG_CUSTOM_WAKE_WORD, CONFIG_CUSTOM_WAKE_WORD_DISPLAY, "wake"});
-#endif
     } else {
         models_ = models_list;
-        ParseWakenetModelConfig();
+        owns_models_ = false;
     }
+    #ifdef CONFIG_CUSTOM_WAKE_WORD
+        threshold_ = CONFIG_CUSTOM_WAKE_WORD_THRESHOLD / 100.0f;
+        commands_.push_back({CONFIG_CUSTOM_WAKE_WORD, CONFIG_CUSTOM_WAKE_WORD_DISPLAY, "wake"});
+        commands_.push_back({"go to sleep", "go to sleep", "sleep"});
+    #endif
 
     if (models_ == nullptr || models_->num == -1) {
         ESP_LOGE(TAG, "Failed to initialize wakenet model");
@@ -121,10 +122,23 @@ bool CustomWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) 
     multinet_->set_det_threshold(multinet_model_data_, threshold_);
     input_buffer_.reserve(multinet_->get_samp_chunksize(multinet_model_data_));
     esp_mn_commands_clear();
-    for (int i = 0; i < commands_.size(); i++) {
-        esp_mn_commands_add(i + 1, commands_[i].command.c_str());
+for (int i = 0; i < commands_.size(); i++) {
+    int command_id = i + 1;
+
+    if (commands_[i].command == "go to sleep") {
+    esp_mn_commands_phoneme_add(
+        command_id,
+        commands_[i].command.c_str(),
+        "Gb To SLmP"
+    );
+} else {
+        esp_mn_commands_add(
+            command_id,
+            commands_[i].command.c_str()
+        );
     }
-    esp_mn_commands_update();
+}
+esp_mn_commands_update();
     
     multinet_->print_active_speech_commands(multinet_model_data_);
 #if CONFIG_SEND_WAKE_WORD_DATA
@@ -179,21 +193,30 @@ void CustomWakeWord::FeedSamples(const int16_t* data, size_t samples, bool mono)
     }
     
     int chunksize = multinet_->get_samp_chunksize(multinet_model_data_);
+    static bool chunk_logged = false;
+    if (!chunk_logged) {
+        ESP_LOGI(TAG, "MULTINET DEBUG: sample_rate=%d chunksize=%d",
+                multinet_->get_samp_rate(multinet_model_data_),
+                chunksize);
+        chunk_logged = true;
+    }
     while (input_buffer_.size() >= chunksize) {
 #if CONFIG_SEND_WAKE_WORD_DATA
         wake_word_audio_cache_.Store(input_buffer_.data(), chunksize);
 #endif
 
         esp_mn_state_t mn_state = multinet_->detect(multinet_model_data_, input_buffer_.data());
-        
+     
+
         if (mn_state == ESP_MN_STATE_DETECTED) {
             esp_mn_results_t *mn_result = multinet_->get_results(multinet_model_data_);
             for (int i = 0; i < mn_result->num && running_; i++) {
                 ESP_LOGI(TAG, "Custom wake word detected: command_id=%d, string=%s, prob=%f", 
                         mn_result->command_id[i], mn_result->string, mn_result->prob[i]);
                 auto& command = commands_[mn_result->command_id[i] - 1];
-                if (command.action == "wake") {
+                if (command.action == "wake" || command.action == "sleep") {
                     last_detected_wake_word_ = command.text;
+                  last_detected_action_ = command.action;
                     running_ = false;
                     input_buffer_.clear();
                     
@@ -308,3 +331,8 @@ bool CustomWakeWord::GetWakeWordOpus(std::vector<uint8_t>& opus) {
     wake_word_opus_.pop_front();
     return !opus.empty();
 }
+
+
+
+
+

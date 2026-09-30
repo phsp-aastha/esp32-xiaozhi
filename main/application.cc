@@ -901,14 +901,37 @@ void Application::HandleWakeWordDetectedEvent() {
 
     auto state = GetDeviceState();
     auto wake_word = audio_service_.GetLastWakeWord();
-    ESP_LOGI(TAG, "Wake word detected: %s (state: %d)", wake_word.c_str(), (int)state);
+    auto wake_action = audio_service_.GetLastWakeWordAction();
+    ESP_LOGI(TAG, "Wake word detected: %s, action: %s (state: %d)",
+             wake_word.c_str(), wake_action.c_str(), (int)state);
 
+    if (wake_action == "sleep") {
+        ESP_LOGI(TAG, "Sleep command detected, returning to idle");
+
+        if (state == kDeviceStateSpeaking || state == kDeviceStateListening) {
+            AbortSpeaking(kAbortReasonWakeWordDetected);
+            while (audio_service_.PopPacketFromSendQueue())
+                ;
+            if (protocol_->IsAudioChannelOpened()) {
+                protocol_->CloseAudioChannel();
+            }
+        }
+
+        audio_service_.EnableWakeWordDetection(true);
+        SetDeviceState(kDeviceStateIdle);
+        return;
+    }
     if (state == kDeviceStateIdle) {
         BeginWakeWordInvoke(wake_word);
     } else if (state == kDeviceStateNotifying) {
         StopNotification();
         BeginWakeWordInvoke(wake_word);
     } else if (state == kDeviceStateSpeaking || state == kDeviceStateListening) {
+        if (wake_action == "wake") {
+            ESP_LOGI(TAG, "Wake command ignored while already active");
+            audio_service_.EnableWakeWordDetection(true);
+            return;
+        }
         AbortSpeaking(kAbortReasonWakeWordDetected);
         // Clear send queue to avoid sending residues to server
         while (audio_service_.PopPacketFromSendQueue())
@@ -1090,8 +1113,9 @@ void Application::StartListeningAudio() {
 
 void Application::ConfigureWakeWordForListening() {
 #ifdef CONFIG_WAKE_WORD_DETECTION_IN_LISTENING
-    // Enable wake word detection in listening mode (configured via Kconfig)
-    audio_service_.EnableWakeWordDetection(audio_service_.IsAfeWakeWord());
+    // Enable wake word detection in listening mode
+    ESP_LOGI(TAG, "LISTENING: Enabling wake word detection");
+    audio_service_.EnableWakeWordDetection(true);
 #else
     // Disable wake word detection in listening mode
     audio_service_.EnableWakeWordDetection(false);
@@ -1372,3 +1396,6 @@ void Application::ResetProtocol() {
         protocol_.reset();
     });
 }
+
+
+

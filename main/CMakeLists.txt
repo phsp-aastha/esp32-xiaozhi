@@ -105,6 +105,8 @@ elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_NT26)
     set(BUILTIN_ICON_FONT font_material_symbols_14_1)
 elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_ESP32)
     set(BOARD_DIR "bread-compact-esp32")
+elseif(CONFIG_BOARD_TYPE_PAHASP_ESP32S3)
+    set(BOARD_DIR "pahasp-esp32s3")
 elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_ESP32_LCD)
     set(BOARD_DIR "bread-compact-esp32-lcd")
     set(BUILTIN_TEXT_FONT font_noto_sans_basic_14_1)
@@ -1225,7 +1227,7 @@ endif()
 
 if(CONFIG_BOARD_TYPE_ESP_HI)
 # Pin AAF assets to a fixed image_player commit so builds stay reproducible.
-# Only pack AAF files referenced by emoji_display.cc — the full test_8bit set
+# Only pack AAF files referenced by emoji_display.cc â€” the full test_8bit set
 # plus wakenet models overflows the 1MB assets partition on the 4MB ESP-HI
 # flash map (see #2228).
 set(URL "https://github.com/espressif2022/image_player/raw/d61e0ccb1d7b0a2a214d0c90f5451fd683f41682/test_apps/test_8bit")
@@ -1436,3 +1438,4 @@ if ("${size}" AND "${offset}")
 else()
     message(STATUS "Assets partition not found, using v1 partition table")
 endif()
+

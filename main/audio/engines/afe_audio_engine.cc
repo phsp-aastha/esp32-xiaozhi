@@ -85,6 +85,7 @@ bool AfeAudioEngine::Initialize(AudioCodec* codec, int frame_duration_ms,
         custom_wake_word_ = std::make_unique<CustomWakeWord>();
         custom_wake_word_->OnWakeWordDetected([this](const std::string& wake_word) {
             last_detected_wake_word_ = wake_word;
+            last_detected_action_ = custom_wake_word_->GetLastDetectedAction();
             xEventGroupClearBits(event_group_, kWakeWordEnabled);
             UpdateActiveState();
             if (wake_word_detected_callback_) {
@@ -628,3 +629,4 @@ bool AfeAudioEngine::GetWakeWordOpus(std::vector<uint8_t>& opus) {
     wake_word_opus_.pop_front();
     return !opus.empty();
 }
+
