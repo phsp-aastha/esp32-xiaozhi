@@ -21,6 +21,17 @@ private:
     lv_obj_t* emotion_label_ = nullptr;
     lv_obj_t* chat_message_label_ = nullptr;
 
+    // Custom OLED face
+    lv_obj_t* face_container_ = nullptr;
+    lv_obj_t* face_left_eye_ = nullptr;
+    lv_obj_t* face_right_eye_ = nullptr;
+    lv_obj_t* face_mouth_ = nullptr;
+    lv_obj_t* face_mouth_2_ = nullptr;
+
+    void CreateFaceUI();
+    void DrawFace(const char* emotion);
+    void ClearFace();
+    
     virtual bool Lock(int timeout_ms = 0) override;
     virtual void Unlock() override;
 

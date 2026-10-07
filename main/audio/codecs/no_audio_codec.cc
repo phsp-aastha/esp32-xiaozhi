@@ -265,7 +265,7 @@ int NoAudioCodec::Read(int16_t* dest, int samples) {
 
         // 24-bit left-aligned in 32-bit -> 16-bit. Use >>15 for 2x gain
         // or >>14 for 4x if your mic is too quiet.
-        int32_t value = v >> 16;
+        int32_t value = v >> 15;
         if (value > INT16_MAX) value = INT16_MAX;
         if (value < -INT16_MAX) value = -INT16_MAX;
         dest[i] = (int16_t)value;
